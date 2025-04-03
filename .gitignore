@@ -1,0 +1,29 @@
+# Ignore everything
+# IDE
+.idea
+.DS_Store
+.vscode
+
+# Profiling
+*.prof
+profiles
+
+# Build
+dist
+tools/builds
+
+# Binaries and generated files
+countries-api
+*.log
+
+# Tests
+users
+logs
+tmp
+new_*
+*download*
+test.conf
+#*.db
+
+# Stay in repo
+!internal/*
