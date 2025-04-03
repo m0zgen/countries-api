@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"math"
 	"strconv"
+	"strings"
 )
 
 type Country struct {
@@ -99,18 +100,48 @@ func GetPaginatedCountriesPlain(c fiber.Ctx) error {
 func GetPaginatedCountries(c fiber.Ctx) error {
 	db := database.Database.Db
 
-	result, err := utils.Paginate[Country](c, db, &Country{}, func(tx *gorm.DB) *gorm.DB {
-		search := c.Query("search")
-		if search != "" {
-			pattern := "%" + search + "%"
-			return tx.Where("common_name ILIKE ? OR official_name ILIKE ?", pattern, pattern)
-		}
-		return tx
-	})
+	result, err := utils.Paginate[Country](
+		c,
+		db,
+		&Country{},
+		func(tx *gorm.DB) *gorm.DB {
+			search := c.Query("search")
+			if search != "" {
+				pattern := "%" + search + "%"
+				//tx = tx.Where("common_name ILIKE ? OR official_name ILIKE ?", pattern, pattern)
+				tx = tx.Where("LOWER(common_name) LIKE LOWER(?) OR LOWER(official_name) LIKE LOWER(?)", pattern, pattern)
+			}
+			return tx
+		},
+		// допустимые поля сортировки:
+		"id", "common_name", "official_name",
+	)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.JSON(result)
+}
+
+func AutocompleteCountries(c fiber.Ctx) error {
+	db := database.Database.Db
+	search := strings.ToLower(c.Query("q", ""))
+	if search == "" {
+		return c.JSON([]string{})
+	}
+
+	pattern := "%" + search + "%"
+	var results []string
+
+	err := db.Model(&Country{}).
+		Where("LOWER(common_name) LIKE ?", pattern).
+		Limit(10).
+		Pluck("common_name", &results).Error
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(results)
 }
