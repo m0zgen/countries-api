@@ -2,7 +2,9 @@ package routes
 
 import (
 	"countries-api/internal/database"
+	"countries-api/internal/utils"
 	"github.com/gofiber/fiber/v3"
+	"gorm.io/gorm"
 	"math"
 	"strconv"
 )
@@ -47,7 +49,7 @@ func GetCountries(c fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(responseCountries)
 }
 
-func GetPaginatedCountries(c fiber.Ctx) error {
+func GetPaginatedCountriesPlain(c fiber.Ctx) error {
 	// 1. Параметры запроса
 	page, err := strconv.Atoi(c.Query("page", "1"))
 	if err != nil || page < 1 {
@@ -92,4 +94,23 @@ func GetPaginatedCountries(c fiber.Ctx) error {
 		"hasNext": page*limit < int(total),
 		"hasPrev": page > 1,
 	})
+}
+
+func GetPaginatedCountries(c fiber.Ctx) error {
+	db := database.Database.Db
+
+	result, err := utils.Paginate[Country](c, db, &Country{}, func(tx *gorm.DB) *gorm.DB {
+		search := c.Query("search")
+		if search != "" {
+			pattern := "%" + search + "%"
+			return tx.Where("common_name ILIKE ? OR official_name ILIKE ?", pattern, pattern)
+		}
+		return tx
+	})
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(result)
 }
