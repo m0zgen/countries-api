@@ -4,6 +4,9 @@
 .DS_Store
 .vscode
 
+# ML
+ml/venv
+
 # Profiling
 *.prof
 profiles
