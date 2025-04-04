@@ -13,6 +13,9 @@ func setupRoutes(app *fiber.App) {
 	app.Get("/api/countries", routes.GetCountries)
 	app.Get("/api/countries/paginated", routes.GetPaginatedCountries)
 	app.Get("/api/countries/autocomplete", routes.AutocompleteCountries)
+	// test ML suggestions
+	app.Get("/api/countries/ml-suggest", routes.SuggestCountriesML)
+
 }
 
 func main() {

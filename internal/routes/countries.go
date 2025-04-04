@@ -3,9 +3,12 @@ package routes
 import (
 	"countries-api/internal/database"
 	"countries-api/internal/utils"
+	"encoding/json"
 	"github.com/gofiber/fiber/v3"
 	"gorm.io/gorm"
+	"log"
 	"math"
+	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -144,4 +147,27 @@ func AutocompleteCountries(c fiber.Ctx) error {
 	}
 
 	return c.JSON(results)
+}
+
+// Test ML suggestion
+func SuggestCountriesML(c fiber.Ctx) error {
+	query := c.Query("q")
+	if query == "" {
+		return c.JSON([]string{})
+	}
+
+	cmd := exec.Command("python3", "ml/ml_suggest.py", query)
+	output, err := cmd.Output()
+	if err != nil {
+		log.Printf("call error: Python: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "python call failed"})
+	}
+
+	var suggestions []string
+	if err := json.Unmarshal(output, &suggestions); err != nil {
+		log.Printf("JSON error: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "json parse failed"})
+	}
+
+	return c.JSON(suggestions)
 }
