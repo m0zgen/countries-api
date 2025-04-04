@@ -46,3 +46,26 @@ Run image:
 ```shell
 docker run -p 3030:3030 country-api
 ```
+
+Test API:
+
+```shell
+GET http://127.0.0.1:3030/api/countries/ml-suggest?q=Al
+```
+
+With `curl`:
+
+```shell
+curl http://127.0.0.1:3030/api/countries/ml-suggest?q=Al
+```
+
+Output:
+```json
+[
+  "Nepal",
+  "Albania",
+  "Algeria",
+  "Senegal",
+  "Portugal"
+]
+```
